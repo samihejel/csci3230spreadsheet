@@ -1,0 +1,21 @@
+.colHeader {
+    background-color: #d0d0d0;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+.rowHeader{
+    background-color: #d0d0d0;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+table{
+    border: 2px solid black;
+    border-collapse: collapse;
+}
+tr,td{
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+.selectedCell{
+    background-color: #e0e0ff;
+}
