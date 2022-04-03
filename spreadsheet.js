@@ -12,22 +12,14 @@ spreadArray = [
     [1000008, 70.0, 75.0, 70.0, 55.5, 21.0],
     [1000009, 80.0, 82.5, 65.0, 72.5, 88.0]  
 ]
-
+var gradesData
 function deselectAll() {
     var cells = document.getElementsByClassName("spreadsheetCell")
     for (i=0; i<cells.length; i++) {
         var cellId = cells[i].id
-        document.getElementById(cellId).classList.remove("selectedCell")
-    }
-    cells = document.getElementsByClassName("rowHeader")
-    for (i=0; i<cells.length; i++) {
-        var cellId = cells[i].id
-        document.getElementById(cellId).classList.remove("selectedCell")
-    }
-    cells = document.getElementsByClassName("colHeader")
-    for (i=0; i<cells.length; i++) {
-        var cellId = cells[i].id
-        document.getElementById(cellId).classList.remove("selectedCell")
+        var element = document.getElementById(cellId)
+        element.classList.remove("selectedCell")
+        element.contentEditable = false
     }
 }
 function selectRow(rowIndex) {
@@ -41,17 +33,47 @@ function selectRow(rowIndex) {
         }
     }
 }
-function selectColumn(colIndex){
+function setNewValue()
+  {
+        var newValue = $('#currentInput').val();
+        selectedObj.html('');
+        selectedObj.text(newValue);
+  }
+
+function selectColumn(colIndex) {
     var cells = document.getElementsByClassName("spreadsheetCell")
     var k = 1
+    var temp = []
     for (i=0; i<cells.length; i++) {
-        var cellId = cells[i].id        
+        var cellId = cells[i].id
+        console.log("cell-" + k + "-" + colIndex)
         if (cellId == "cell-" + k + "-" + colIndex) {
+            
             k++
             document.getElementById(cellId).classList.add("selectedCell")
+            temp.push(document.getElementById(cellId).innerText)
         }
     }
+    console.log(temp)
+    gradesData = temp
+    gradesData = getFrequency(gradesData)
+    makeChart()
 }
+
+function getFrequency(grades) {
+    var length = grades.length
+    var frequency = [
+        {"grade": "A", "frequency": grades.filter(number => number > 80).length/length},
+        {"grade": "B", "frequency": grades.filter(number => number >= 65 && number < 80).length/length},
+        {"grade": "C", "frequency": grades.filter(number => number >= 55 && number < 65).length/length},
+        {"grade": "D", "frequency": grades.filter(number => number >= 50 && number < 55).length/length},
+        {"grade": "F", "frequency": grades.filter(number => number < 50).length/length},
+    ]
+
+    console.log(frequency);
+    return frequency
+}
+
 function generateTable(table, data) {
     for (let i=0; i<data.length; i++) {
         let row = table.insertRow()
@@ -74,19 +96,65 @@ function generateTable(table, data) {
         }
     }
 }
+
+function makeChart() {
+    var svg = d3.select("svg"),
+    margin = 200,
+    width = svg.attr("width") - margin,
+    height = svg.attr("height") - margin
+
+
+    var xScale = d3.scaleBand().range([0, width]).padding(0.4),
+        yScale = d3.scaleLinear().range([height, 0]);
+
+    var g = svg.append("g")
+        .attr("transform", "translate(" + 100 + "," + 100 + ")");
+
+    d3.csv("grades.csv", function(error, data) {
+    if (error) {
+        throw error;
+    }
+
+    xScale.domain(data.map(function(d) { return d.year; }));
+    yScale.domain([0, d3.max(data, function(d) { return d.value; })]);
+
+    g.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xScale));
+
+    g.append("g")
+    .call(d3.axisLeft(yScale).tickFormat(function(d){
+        return "$" + d;
+    }).ticks(10));
+
+
+    g.selectAll(".bar")
+    .data(data)
+    .enter().append("rect")
+    .attr("class", "bar")
+    .attr("x", function(d) { return xScale(d.year); })
+    .attr("y", function(d) { return yScale(d.value); })
+    .attr("width", xScale.bandwidth())
+    .attr("height", function(d) { return height - yScale(d.value); });
+    });
+
+}
+
 var colIndex
 var rowIndex
 let table = document.getElementById("spreadsheet")
 let data = spreadArray
 generateTable(table, data)
 $(document).ready(function(){
-    $(".spreadsheetCell").click(function() {
+    $(".spreadsheetCell").click(function() {    
         deselectAll()
         this.classList.add("selectedCell")
+        $(this).attr("contentEditable", "true")
+        
     });
     $(".colHeader").click(function() {
         deselectAll()
-        colIndex = (this.id).replace("col-","")
+        colIndex = (this.id).replace("column-","")
         selectColumn(colIndex)
         this.classList.add("selectedCell")
     });
